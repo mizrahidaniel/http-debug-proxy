@@ -1,99 +1,88 @@
 # HTTP Debug Proxy
 
-Lightweight HTTP proxy for request/response inspection, modification, and debugging.
-
-## The Problem
-
-When developing APIs or integrating with third-party services, you need to:
-- See exactly what requests your app is sending
-- Inspect response headers and bodies
-- Modify requests/responses on the fly for testing
-- Debug webhook payloads
-- Test error scenarios without touching production
-
-**Existing tools** (mitmproxy, Charles, Burp) are heavyweight, complex, or require GUI.
-
-## What This Is
-
-Single-binary HTTP proxy that logs everything passing through it:
-
-```bash
-# Start proxy on :8888
-http-debug-proxy
-
-# Route traffic through it
-export HTTP_PROXY=http://localhost:8888
-
-# Or point your app to it
-curl --proxy http://localhost:8888 https://api.example.com/users
-```
+Lightweight HTTP request inspector - capture, replay, and debug API calls.
 
 ## Features
 
-### Core (MVP)
-- ✅ HTTP/HTTPS proxy with automatic HTTPS interception
-- ✅ Request/response logging to console (pretty-printed)
-- ✅ JSON syntax highlighting
-- ✅ Request filtering (by host, path, method)
-- ✅ Export logs to JSON/HAR format
+- **Zero-config proxy** - Just point it at your API
+- **Request/response capture** - See exactly what's being sent/received
+- **Web UI** - Clean HTML interface at `/__debug/requests`
+- **JSON API** - Programmatic access to captured requests
+- **Auto-cleanup** - Keeps last 100 requests
 
-### Advanced
-- 🔄 Request/response modification rules
-- 🔄 Replay saved requests
-- 🔄 Mock responses (respond without hitting upstream)
-- 🔄 Performance metrics (timing, size, status codes)
-- 🔄 Web UI for browsing logs
+## Installation
+
+```bash
+go install github.com/mizrahidaniel/http-debug-proxy@latest
+```
+
+## Usage
+
+```bash
+# Proxy requests to an API
+http-debug-proxy --target=https://api.github.com --port=8080
+
+# Make requests through the proxy
+curl http://localhost:8080/users/octocat
+
+# View captured requests
+open http://localhost:8080/__debug/requests
+```
+
+## Debug UI
+
+Navigate to `http://localhost:PORT/__debug/requests` to see:
+- All captured requests & responses
+- Response times & status codes
+- Request/response bodies
+- Color-coded status (green=2xx, orange=4xx, red=5xx)
+
+## JSON API
+
+```bash
+# Get all captured requests as JSON
+curl http://localhost:8080/__debug/requests \
+  -H "Accept: application/json"
+
+# Clear captured requests
+curl http://localhost:8080/__debug/clear
+```
 
 ## Use Cases
 
-**API Development:**
+- **Webhook debugging** - Inspect incoming webhook payloads
+- **API integration** - Debug third-party API calls
+- **Mobile app testing** - Capture app → backend traffic
+- **CI/CD debugging** - Record failed API calls in tests
+
+## Example
+
 ```bash
-# Debug your own API calls
-http-debug-proxy --filter="api.myapp.com"
+# Start proxy
+http-debug-proxy --target=https://jsonplaceholder.typicode.com
+
+# Make some requests
+curl http://localhost:8080/posts/1
+curl http://localhost:8080/users
+
+# View in browser
+open http://localhost:8080/__debug/requests
 ```
 
-**Webhook Debugging:**
-```bash
-# Inspect webhook payloads from Stripe, GitHub, etc.
-http-debug-proxy --save-to=webhooks.json
-```
+## Why This?
 
-**Integration Testing:**
-```bash
-# Mock third-party API responses
-http-debug-proxy --mock="api.stripe.com:./mocks/stripe.json"
-```
+Like ngrok's inspector, but:
+- **Self-hosted** - No external service
+- **Lightweight** - Single binary, no dependencies
+- **Simple** - Point and shoot
 
-## Status
-
-🚧 **In Development** - MVP proxy server with logging coming first
-
-## Why Not X?
-
-**vs mitmproxy:** Simpler, focused on quick debugging, no Python/GUI needed  
-**vs Charles Proxy:** Free, open source, CLI-first, lightweight  
-**vs Burp Suite:** Not security-focused, just debugging/logging  
-**vs ngrok inspect:** Works locally, no external service, more control
-
-## Tech Stack
-
-- **Language:** Go (fast, single binary, great HTTP/2 support)
-- **HTTP Proxy:** net/http reverse proxy
-- **HTTPS:** Dynamic cert generation (similar to mitmproxy)
-- **Output:** JSON, HAR, or pretty console logs
-
-## Development
+## Building from Source
 
 ```bash
-# Clone
 git clone https://github.com/mizrahidaniel/http-debug-proxy
 cd http-debug-proxy
-
-# Build
-go build -o http-debug-proxy ./cmd/proxy
-
-# Run
-./http-debug-proxy
+go build
+./http-debug-proxy --target=https://api.example.com
 ```
 
 ## License
